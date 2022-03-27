@@ -7,8 +7,6 @@
 
 ## Table of Contents
 
----
-
 -   [About Bunsho](#about)
 -   [Features](#features)
 -   [Installation](#installation)
@@ -20,8 +18,6 @@
 -   [License](#license)
 
 ## About Bunsho
-
----
 
 ### What is Bunsho?
 
@@ -43,8 +39,6 @@ frontend is written in TypeScript. Currently, Bunsho only supports running on
 
 ## Features
 
----
-
 -   Clean and simple web-based interface.
 -   Responsive and modern UI, with tab navigation support.
 -   Can be hosted on any \*nix machine, including MacOS and Raspberry Pis.
@@ -57,8 +51,6 @@ frontend is written in TypeScript. Currently, Bunsho only supports running on
 -   More coming soon...
 
 ## Installation
-
----
 
 ### Prerequisites
 
@@ -126,7 +118,7 @@ background, you will have to create a Systemd service.
 
 2. Write the following configuration into the file, make sure you review and modify the configuration correctly:
 
-    ```toml
+    ```
     [Unit]
     Description=Bunsho Remote File Server
     After=network-online.target
@@ -147,8 +139,6 @@ background, you will have to create a Systemd service.
     ```
 
 ## Questions
-
----
 
 ### Remote file browsers such as [Filebrowser](https://github.com/filebrowser/filebrowser) already exists, why make another one?
 
@@ -182,19 +172,15 @@ endpoints for yourself :).
 
 ## Credits
 
----
-
 I would like to credit these people and projects for help me and/or giving me
 inspiration to create Bunsho.
 
--   Logo and other graphics design - @PixelEdition
+-   Logo and other graphics design - [@PixelEdition](https://github.com/PixelEdition)
 -   Inspiration from other file explorer projects:
     -   [Filebrowser](https://github.com/filebrowser/filebrowser)
     -   [Files](https://github.com/files-community/Files)
     -   [Xplorer](https://github.com/kimlimjustin/xplorer)
 
 ## License
-
----
 
 This project is licensed under the [GPL License](./LICENSE), Version 3.0.
