@@ -1,0 +1,14 @@
+# Backend
+__pycache__
+.mypy_cache
+venv
+config.json
+
+# Frontend
+dist
+node_modules
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
