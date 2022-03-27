@@ -1,5 +1,6 @@
 <div align="center">
-    <img src="./media/bunsho-logo.svg" alt="Bunsho Logo" />
+    <img src="./media/bunsho-logo.svg#gh-light-mode-only" alt="Bunsho Logo" />
+    <img src="./media/bunsho-logo-no-bg.svg#gh-dark-mode-only" alt="Bunsho Logo" />
     <h1>Bunsho</h1>
     <p>Remote web-based file explorer, written in Python 🐍</p>
 </div>
