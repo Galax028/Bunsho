@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="./media/bunsho-logo.svg#gh-light-mode-only" alt="Bunsho Logo" />
-    <img src="./media/bunsho-logo-no-bg.svg#gh-dark-mode-only" alt="Bunsho Logo" />
+    <img src="./frontend/src/assets/bunsho-logo.svg#gh-light-mode-only" alt="Bunsho Logo" />
+    <img src="./frontend/src/assets/bunsho-logo-no-bg.svg#gh-dark-mode-only" alt="Bunsho Logo" />
     <h1>Bunsho</h1>
     <p>Remote web-based file explorer, written in Python 🐍</p>
 </div>
@@ -140,12 +140,13 @@ background, you will have to create a Systemd service.
 
 ## Questions
 
-### Remote file browsers such as [Filebrowser](https://github.com/filebrowser/filebrowser) already exists, why make another one?
+### Similar projects such as [Filebrowser](https://github.com/filebrowser/filebrowser) already exists, why make another one?
 
 I wanted to gain some more programming experience doing this kind of thing, I
 also happen to have my own server which at the time of development, doesn't
 really have anything running on it. Then I thought I could start making some
-projects of my own that would be useful to me if I host it on the server.
+projects of my own that would be useful to me if I host it on the server. It's 
+really just up to you if you want use Bunsho or not.
 
 ### How do I set this up with [Nginx](https://nginx.org)?
 
@@ -164,11 +165,11 @@ certificates, generate them and set `SSL_CERTS_FOLDER` to `/etc/letsencrypt/live
 where `example.com` is replaced by your domain name. Side note, if you are
 using Nginx, I highly recommend you configure SSL/TLS there instead.
 
-### Can I make my own frontend?
+### Since Bunsho is an API, can I make my own frontend?
 
-Sure thing, but currently there is no documentation on the Bunsho API. But I
-won't stop you if you want to try and read the source to figure out the
-endpoints for yourself :).
+Sure thing, but currently there is no documentation on the Bunsho API. Though, I
+won't stop you if you want to try and read the source to figure out how the API
+works and how to interact with it properly :).
 
 ## Credits
 

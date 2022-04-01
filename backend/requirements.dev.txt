@@ -1,0 +1,4 @@
+black==22.1.0
+mypy==0.942
+types-aiofiles==0.8.5
+types-ujson==4.2.1

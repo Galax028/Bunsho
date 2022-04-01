@@ -1,7 +1,12 @@
+.mypy_cache
+.vscode
+
 # Backend
 __pycache__
-.mypy_cache
+tmp
 venv
+bunsho.db
+temp.db
 config.json
 
 # Frontend

@@ -1,0 +1,18 @@
+{
+    "DEV_MODE": false,
+    "HOST": "127.0.0.1",
+    "PORT": 8000,
+    "REQUEST_MAX_SIZE": 10000000000,
+    "JWT_EXPIRY_MINUTES": 30,
+    "SECRET": "To generate a secret, take a look at the README instructions.",
+    "LOCATIONS": [
+        {
+            "name": "My Documents",
+            "dir": "/home/username/Documents"
+        },
+        {
+            "name": "My Pictures",
+            "dir": "/home/username/Pictures"
+        }
+    ]
+}

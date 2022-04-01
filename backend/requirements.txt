@@ -1,0 +1,6 @@
+aiosqlite==0.17.0
+argon2-cffi==21.3.0
+pyjwt==2.3.0
+python-magic==0.4.25
+sanic==21.12.1
+sanic-ext==22.1.2
