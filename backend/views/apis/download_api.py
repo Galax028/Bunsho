@@ -20,9 +20,44 @@ blueprint = Blueprint("api_download", url_prefix="/download")
 async def api_download_single(
     request: Request, index: int, filepath: str, jwt: JWTDict
 ) -> ResponseStream:
+    """
+    Download Single File Endpoint
+
+    This endpoint will stream the file requested by the user to be downloaded.
+
+    openapi:
+    ---
+    tags:
+        - download
+    security:
+        - token: []
+    parameters:
+        - in: path
+          name: index
+          schema:
+              type: integer
+              example: 0
+          required: true
+          description: Index of a location from the config array of locations.
+        - in: path
+          name: filepath
+          schema:
+              type: string
+              example: /path/to/file_or_folder
+          required: true
+          description: The path to the file to download.
+    responses:
+        "200":
+            description: The requested file.
+            content:
+                application/octet-stream:
+                    schema:
+                        type: string
+                        format: binary
+    """
     path = os.path.join(request.app.config.LOCATIONS[int(index)]["dir"], filepath)
     if not await aiopath.exists(path):
-        raise NotFound("File was not found.", 404)
+        raise NotFound("File or folder was not found.", 404)
     if not await aiopath.isfile(path):
         raise InvalidUsage("Folders cannot be downloaded by this endpoint.", 400)
 
@@ -43,11 +78,54 @@ async def api_download_single(
 async def api_download_folder(
     request: Request, index: int, folder: str, jwt: JWTDict
 ) -> ResponseStream:
+    """
+    Download Compressed Folder Endpoint
+
+    This endpoint will stream the folder requested by the user to be downloaded.
+    The user can specify wheather to use Zip compression or Tar with GZip.
+
+    openapi:
+    ---
+    tags:
+        - download
+    security:
+        - token: []
+    parameters:
+        - in: path
+          name: index
+          schema:
+              type: integer
+              example: 0
+          required: true
+          description: Index of a location from the config array of locations.
+        - in: path
+          name: filepath
+          schema:
+              type: string
+              example: /path/to/file_or_folder
+          required: true
+          description: The path to the folder to download.
+        - in: query
+          name: ext
+          schema:
+              type: string
+              enum: [zip, tar]
+          required: true
+          description: The file compression type. Accepts "zip" or "tar".
+    responses:
+        "200":
+            description: The requested folder.
+            content:
+                application/octet-stream:
+                    schema:
+                        type: string
+                        format: binary
+    """
     path = os.path.join(request.app.config.LOCATIONS[int(index)]["dir"], folder)
     archive_path = f"{os.path.join(request.app.ctx.tmp_folder, path.replace('/', '_'))}"
     ext = request.args.get("ext")
     if not await aiopath.exists(path):
-        raise NotFound("Folder was not found.", 404)
+        raise NotFound("File or folder was not found.", 404)
     if not await aiopath.isdir(path):
         raise InvalidUsage("Files cannot be downloaded by this endpoint.", 400)
     if ext not in ("zip", "tar"):

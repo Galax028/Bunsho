@@ -49,6 +49,8 @@ async def _decode_token(
             raise Unauthorized("This token has been invalidated.", 401)
         if return_value:
             return decoded
+    except jwt.exceptions.DecodeError:
+        raise Unauthorized("An error occurred while trying to decode the token.", 401)
     except jwt.exceptions.ExpiredSignatureError:
         raise Unauthorized("This token has expired.", 401)
 

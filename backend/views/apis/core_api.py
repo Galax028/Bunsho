@@ -15,7 +15,71 @@ blueprint = Blueprint("api_core", url_prefix="/core")
 @blueprint.get("/ls/<index:int>/<folder:path>")
 @require_jwt(return_value=True)
 @check_authorized_dirs
-async def api_core_ls(request: Request, index: int, folder: str, jwt: JWTDict) -> HTTPResponse:
+async def api_core_ls(
+    request: Request, index: int, folder: str, jwt: JWTDict
+) -> HTTPResponse:
+    """
+    List Directory Endpoint
+
+    This endpoint lists the contents of a directory.
+
+    openapi:
+    ---
+    tags:
+        - filesystem
+    security:
+        - token: []
+    parameters:
+        - in: path
+          name: index
+          schema:
+              type: integer
+              example: 0
+          required: true
+          description: Index of a location from the config array of locations.
+        - in: path
+          name: folder
+          schema:
+              type: string
+              example: /path/to/folder
+          required: true
+          description: The folder path to list.
+    responses:
+        "200":
+            description: The folder's content.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            listing:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        name:
+                                            type: string
+                                        mimetype:
+                                            type: string
+                                            nullable: true
+                                        size:
+                                            type: string
+                                            nullable: true
+                                        created:
+                                            type: integer
+                                        is_directory:
+                                            type: boolean
+                        example:
+                            listing:
+                                - name: essay.txt
+                                  mimetype: text/plain
+                                  size: 1024
+                                  is_directory: false
+                                - name: work
+                                  mimetype: null
+                                  size: null
+                                  is_directory: true
+    """
     body = []
     try:
         folder_path = os.path.join(
@@ -49,6 +113,61 @@ async def api_core_ls(request: Request, index: int, folder: str, jwt: JWTDict) -
 async def api_core_mv(
     request: Request, index: int, filepath: str, jwt: JWTDict
 ) -> HTTPResponse:
+    """
+    Move File/Folder Endpoint
+
+    This endpoint moves the specified file or folder. If the request JSON has
+    the `rename` key set to `true`, it will rename the file or folder instead.
+
+    openapi:
+    ---
+    tags:
+        - filesystem
+    security:
+        - token: []
+    parameters:
+        - in: path
+          name: index
+          schema:
+              type: integer
+              example: 0
+          required: true
+          description: Index of a location from the config array of locations.
+        - in: path
+          name: filepath
+          schema:
+              type: string
+              example: /path/to/file_or_folder
+          required: true
+          description: The path to the file or folder to move/rename.
+    requestBody:
+        description: Configuration.
+        required: true
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        new_path:
+                            type: string
+                        rename:
+                            type: boolean
+                    example:
+                        new_path: ./other/folder
+                        rename: false
+    responses:
+        "200":
+            description: File/folder was moved/renamed successfully.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            status:
+                                type: string
+                        example:
+                            status: OK
+    """
     if not jwt["permissions"]["move"]:
         raise Forbidden("Insufficient permissions to move files.", 403)
 
@@ -72,7 +191,7 @@ async def api_core_mv(
         )
     if await aiopath.exists(os.path.join(full_path, os.path.basename(filepath))):
         raise InvalidUsage(
-            "There is already a file with the same name at the destination.", 400
+            "There is already a file/folder with the same name at the destination.", 400
         )
 
     if not request.json["rename"]:
@@ -88,6 +207,45 @@ async def api_core_mv(
 async def api_core_rm(
     request: Request, index: int, filepath: str, jwt: JWTDict
 ) -> HTTPResponse:
+    """
+    Delete File/Folder Endpoint
+
+    This endpoint deletes the specified file or folder.
+
+    openapi:
+    ---
+    tags:
+        - filesystem
+    security:
+        - token: []
+    parameters:
+        - in: path
+          name: index
+          schema:
+              type: integer
+              example: 0
+          required: true
+          description: Index of a location from the config array of locations.
+        - in: path
+          name: filepath
+          schema:
+              type: string
+              example: /path/to/file_or_folder
+          required: true
+          description: The path to the file or folder to delete.
+    responses:
+        "200":
+            description: File/folder was deleted successfully.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            status:
+                                type: string
+                        example:
+                            status: OK
+    """
     if not jwt["permissions"]["delete"]:
         raise Forbidden("Insufficient permissions to delete files.", 403)
 
@@ -105,6 +263,31 @@ async def api_core_rm(
 @blueprint.post("/update-cfg")
 @require_jwt(return_value=True)
 async def api_core_update_cfg(request: Request, jwt: JWTDict) -> HTTPResponse:
+    """
+    Update Configuration Endpoint
+
+    This endpoint when requested, will update the server's configuration from
+    the `config.json` file. Requires admin permissions.
+
+    openapi:
+    ---
+    tags:
+        - config
+    security:
+        - token: []
+    responses:
+        "200":
+            description: Config was updated successfully.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            status:
+                                type: string
+                        example:
+                            status: OK
+    """
     if jwt["permissions"]["admin"]:
         request.app.update_config(BunshoConfig())
         return json({"status": "OK"})

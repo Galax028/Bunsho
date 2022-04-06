@@ -26,6 +26,21 @@ class BunshoApp(Sanic):
                 "oas_ui_redoc": False,
             }
         )
+        self.ext.openapi.describe(
+            title="Bunsho API",
+            version="1.0.0-beta-1",
+            description="The Bunsho API documentation",
+        )
+        self.ext.openapi.license(
+            name="License: GPL-3.0", url="https://www.gnu.org/licenses/gpl-3.0.en.html"
+        )
+        self.ext.openapi.add_security_scheme(
+            ident="Token",
+            type="http",
+            scheme="bearer",
+            bearer_format="JWT",
+            description="JWT Bearer authentication method",
+        )
 
         self.register_listener(self.init_app, "main_process_start")
         self.register_listener(self.stop_app, "main_process_stop")
@@ -36,7 +51,7 @@ class BunshoApp(Sanic):
         self.run(
             host=self.config.HOST,
             port=self.config.PORT,
-            debug=self.config.DEV_MODE,
+            dev=self.config.DEV_MODE,
             ssl=self.config.get("SSL_CERTS_FOLDER"),
             fast=not self.config.DEV_MODE,
             access_log=self.config.DEV_MODE,

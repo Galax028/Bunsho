@@ -29,7 +29,7 @@ async def api_upload_file_metadata(request: Request, jwt: JWTDict) -> HTTPRespon
         raise InvalidUsage("Bad argument values were provided.", 400)
 
     if location not in valid_locations:
-        raise NotFound("The provided location is not valid.", 404)
+        raise NotFound("The provided location was not found.", 404)
 
     if jwt["authorized_locations"] == "all":
         authorized = True
@@ -49,7 +49,10 @@ async def api_upload_file_metadata(request: Request, jwt: JWTDict) -> HTTPRespon
                 "Directory traversal outside of the root location is not allowed.", 400
             )
         if await aiopath.exists(full_location):
-            raise InvalidUsage("A file with this name already exists.", 400)
+            raise InvalidUsage(
+                "There is already a file/folder with the same name at the destination.",
+                400,
+            )
 
         return json(
             {
