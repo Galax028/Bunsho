@@ -1,5 +1,7 @@
-import asyncio
 import os
+
+if os.name == "nt":
+    raise Exception("Currently Bunsho does not support running on Windows.")
 
 import uvloop
 from sanic import Sanic
@@ -86,5 +88,5 @@ class BunshoApp(Sanic):
 
 
 if __name__ == "__main__":
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    uvloop.install()
     BunshoApp()
