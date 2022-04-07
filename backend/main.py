@@ -35,7 +35,7 @@ class BunshoApp(Sanic):
             name="License: GPL-3.0", url="https://www.gnu.org/licenses/gpl-3.0.en.html"
         )
         self.ext.openapi.add_security_scheme(
-            ident="Token",
+            ident="token",
             type="http",
             scheme="bearer",
             bearer_format="JWT",

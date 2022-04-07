@@ -15,6 +15,48 @@ blueprint = Blueprint("api_upload", url_prefix="/upload")
 @blueprint.post("/file-metadata")
 @require_jwt(return_value=True)
 async def api_upload_file_metadata(request: Request, jwt: JWTDict) -> HTTPResponse:
+    """
+    Upload File Endpoint (Part 1)
+
+    This endpoint requires the request to send the location, destination folder,
+    and the filename. It will then return a UUID to be used in the uploading
+    process.
+
+    openapi:
+    ---
+    tags:
+        - upload
+    security:
+        - token: []
+    requestBody:
+        description: Configuration.
+        required: true
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        location:
+                            type: string
+                        folder:
+                            type: string
+                        filename:
+                            type: string
+                    example:
+                        location: Pictures
+                        folder: screenshots/
+                        filename: funny-game-bug.jpeg
+    responses:
+        "200":
+            description: The UUID to be used for file uploading.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            uuid:
+                                type: string
+    """
     if not jwt["permissions"]["write"]:
         raise Forbidden("Insufficient permissions to write files.", 403)
 
@@ -56,8 +98,7 @@ async def api_upload_file_metadata(request: Request, jwt: JWTDict) -> HTTPRespon
 
         return json(
             {
-                "status": "200_OK",
-                "body": await request.app.ctx.tempdb.insert_uuid(
+                "uuid": await request.app.ctx.tempdb.insert_uuid(
                     jwt["uname"], full_location
                 ),
             }
@@ -71,6 +112,45 @@ async def api_upload_file_metadata(request: Request, jwt: JWTDict) -> HTTPRespon
 async def api_upload_file(
     request: Request, tempdb: TempDBInterface, jwt: JWTDict
 ) -> HTTPResponse:
+    """
+    Upload File Endpoint (Part 2)
+
+    This endpoint requires will allow you to upload the file. The UUID from the
+    part 1 upload endpoint is required.
+
+    openapi:
+    ---
+    tags:
+        - upload
+    security:
+        - token: []
+    parameters:
+        - in: query
+          name: uuid
+          schema:
+              type: string
+          required: true
+          description: The UUID from the part 1 upload endpoint.
+    requestBody:
+        description: The file to be uploaded.
+        content:
+            application/octet-stream:
+                schema:
+                    type: string
+                    format: binary
+    responses:
+        "200":
+            description: The file was uploaded successfully.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            status:
+                                type: string
+                        example:
+                            status: OK
+    """
     if not jwt["permissions"]["write"]:
         raise Forbidden("Insufficient permissions to write files.", 403)
 
