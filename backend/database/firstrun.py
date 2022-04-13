@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import aiosqlite
 import ujson
-from auth.passwd import hash_passwd  # type: ignore
+from auth.passwd import hash_passwd
 
 
 async def generate_db(path: str):
@@ -10,13 +10,28 @@ async def generate_db(path: str):
         await db.execute(
             dedent(
                 """
-            CREATE TABLE IF NOT EXISTS auth (
-                uname TEXT NOT NULL UNIQUE,
-                passwd TEXT NOT NULL,
-                authorized_locations TEXT NOT NULL,
-                permissions TEXT NOT NULL
-            );
-        """
+                CREATE TABLE IF NOT EXISTS auth (
+                    uname TEXT NOT NULL UNIQUE,
+                    passwd TEXT NOT NULL,
+                    authorized_locations TEXT NOT NULL,
+                    permissions TEXT NOT NULL
+                );
+                """
+            )
+        )
+        await db.execute(
+            dedent(
+                """
+                CREATE TABLE IF NOT EXISTS refresh_tokens (
+                    token TEXT NOT NULL UNIQUE,
+                    expiry INTEGER NOT NULL,
+                    uname TEXT NOT NULL,
+                    FOREIGN KEY (uname)
+                    REFERENCES auth (uname)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                );
+                """
             )
         )
         await db.commit()
@@ -24,7 +39,7 @@ async def generate_db(path: str):
             """
             INSERT INTO auth (uname, passwd, authorized_locations, permissions)
             VALUES (?, ?, ?, ?);
-        """,
+            """,
             (
                 "admin",
                 await hash_passwd("admin"),

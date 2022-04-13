@@ -14,7 +14,24 @@ class BunshoConfig(Config):
         super().__init__()
 
         with open("./config.json", "r", encoding="utf8") as f:
-            self.update_config(ujson.load(f))
+            config = ujson.load(f)
+            if not all(
+                key in config
+                for key in (
+                    "DEV_MODE",
+                    "ENABLE_OPENAPI",
+                    "HOST",
+                    "PORT",
+                    "ACCESS_TOKEN_SECRET",
+                    "REFRESH_TOKEN_SECRET",
+                    "LOCATIONS",
+                )
+            ):
+                raise ValueError(
+                    "The configuration for Bunsho is incomplete. Please refer to the README instructions."
+                )
+
+            self.update_config(config)
 
 
 def generateshare() -> str:

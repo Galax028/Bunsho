@@ -22,8 +22,8 @@ class BunshoApp(Sanic):
         logger.info("[App]: Loaded views, APIs, and error handlers")
         self.extend(
             config={
-                "cors_origins": "*",
-                "oas": self.config.DEV_MODE,
+                "cors_origins": "*" if self.config.DEV_MODE else "",
+                "oas": self.config.ENABLE_OPENAPI,
                 "oas_ui_default": "swagger",
                 "oas_ui_redoc": False,
             }
@@ -57,6 +57,7 @@ class BunshoApp(Sanic):
             ssl=self.config.get("SSL_CERTS_FOLDER"),
             fast=not self.config.DEV_MODE,
             access_log=self.config.DEV_MODE,
+            motd=False,
         )
 
     async def init_app(self, _app, _) -> None:
@@ -79,12 +80,18 @@ class BunshoApp(Sanic):
         self.ctx.tempdb = await TempDBInterface.init()
         self.ext.dependency(self.ctx.tempdb)
         logger.info("[Worker]: Connected to temporary database")
+        self.add_task(
+            task=self.ctx.db.refresh_tokens_cleanup_task(),
+            name="refresh_tokens_cleanup_task",
+        )
 
     async def stop_db(self, _app, _) -> None:
         await self.ctx.db.stop()
         logger.info("[Worker]: Disconnected from SQLite database")
         await self.ctx.tempdb.stop()
         logger.info("[Worker]: Disconnected from temporary database")
+        await self.cancel_task("refresh_tokens_cleanup_task")
+        self.purge_tasks()
 
 
 if __name__ == "__main__":

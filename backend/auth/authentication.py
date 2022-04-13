@@ -38,7 +38,9 @@ async def _decode_token(
 
     try:
         decoded: JWTDict = jwt.decode(  # type: ignore
-            request.token, request.app.config.SECRET, algorithms=["HS256"]
+            jwt=request.token,
+            key=request.app.config.ACCESS_TOKEN_SECRET,
+            algorithms=["HS256"],
         )
         blacklist: bool = await request.app.ctx.tempdb.verify_jwt_blacklist(
             decoded["uname"], decoded["iat"]
@@ -78,7 +80,7 @@ def check_authorized_dirs(wrapped: Callable[..., Coroutine]):
         async def decorated_function(request: Request, *args, **kwargs):
             try:
                 location = request.app.config.LOCATIONS[int(kwargs["index"])]
-            except IndexError as err:
+            except IndexError:
                 raise InvalidUsage("Location index was not provided.", 400)
 
             jwt = kwargs["jwt"]

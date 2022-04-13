@@ -12,12 +12,87 @@ from sanic.response import HTTPResponse, json
 blueprint = Blueprint("api_auth", url_prefix="/auth")
 
 
-@blueprint.post("/login")
-async def api_auth_login(request: Request, db: SQLiteInterface) -> HTTPResponse:
+@blueprint.post("/access-token")
+async def api_auth_access_token(request: Request, db: SQLiteInterface) -> HTTPResponse:
     """
-    Login Endpoint
+    Access Token Endpoint
 
-    This endpoint takes in the username and password and returns a JWT token.
+    This endpoint verifies the refresh token provided in the cookie and returns
+    an access token.
+
+    openapi:
+    ---
+    tags:
+        - authentication
+    parameters:
+        - in: cookie
+          name: rt
+          description: The refresh token.
+          required: true
+          schema:
+              type: string
+    responses:
+        "200":
+            description: The JWT access token.
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            token:
+                                type: string
+    """
+    rt_cookie = request.cookies.get("rt")
+    if not rt_cookie:
+        raise Unauthorized("Refresh token was not provided.", 401)
+
+    fetched_rt = await db.find_refresh_token("token", rt_cookie)
+    if not fetched_rt or fetched_rt[0] != rt_cookie:
+        raise Unauthorized(
+            "Could not find the provided refresh token in the database.", 401
+        )
+    if fetched_rt[1] < int(datetime.now(tz=timezone.utc).timestamp()):
+        raise Unauthorized("This token has expired.", 401)
+
+    try:
+        refresh_token = jwt.decode(
+            jwt=rt_cookie,
+            key=request.app.config.REFRESH_TOKEN_SECRET,
+            algorithms=["HS256"],
+        )
+        if refresh_token["iss"] != "Bunsho":
+            raise Unauthorized("Invalid token issuer.", 401)
+    except jwt.exceptions.DecodeError:
+        raise Unauthorized("An error occurred while trying to decode the token.", 401)
+    except jwt.exceptions.ExpiredSignatureError:
+        raise Unauthorized("This token has expired.", 401)
+
+    fetched_credentials = await db.find_user(fetched_rt[2])
+    return json(
+        {
+            "access-token": jwt.encode(
+                {
+                    "iat": datetime.now(tz=timezone.utc),
+                    "exp": datetime.now(tz=timezone.utc) + timedelta(minutes=15),
+                    "iss": "Bunsho",
+                    "uname": fetched_credentials[0],
+                    "authorized_locations": fetched_credentials[2],
+                    "permissions": fetched_credentials[3],
+                },
+                request.app.config.ACCESS_TOKEN_SECRET,
+                algorithm="HS256",
+            ),
+        }
+    )
+
+
+@blueprint.post("/refresh-token")
+async def api_auth_refresh_token(request: Request, db: SQLiteInterface) -> HTTPResponse:
+    """
+    Refresh Token Endpoint
+
+    This endpoint takes in the username and password and sets a refresh token as
+    a cookie and also returns an access token for the user.
 
     openapi:
     ---
@@ -67,24 +142,50 @@ async def api_auth_login(request: Request, db: SQLiteInterface) -> HTTPResponse:
                 passwd=await hash_passwd(credentials["passwd"]),
             )
 
-        cfg = request.app.config
-        return json(
+        fetched_rt = await db.find_refresh_token("uname", credentials["uname"])
+        if fetched_rt:
+            refresh_token_expiry = datetime.fromtimestamp(fetched_rt[1])
+            refresh_token = fetched_rt[0]
+        else:
+            refresh_token_expiry = datetime.now(tz=timezone.utc) + timedelta(days=1)
+            refresh_token = jwt.encode(
+                {
+                    "iat": datetime.now(tz=timezone.utc),
+                    "exp": refresh_token_expiry,
+                    "iss": "Bunsho",
+                    "uname": fetched_credentials[0],
+                },
+                request.app.config.REFRESH_TOKEN_SECRET,
+                algorithm="HS256",
+            )
+            await db.insert_refresh_token(
+                token=refresh_token,
+                expiry=int(refresh_token_expiry.timestamp()),
+                uname=credentials["uname"],
+            )
+
+        response = json(
             {
-                "token": jwt.encode(
+                "access-token": jwt.encode(
                     {
                         "iat": datetime.now(tz=timezone.utc),
-                        "exp": datetime.now(tz=timezone.utc)
-                        + timedelta(minutes=cfg.JWT_EXPIRY_MINUTES),
+                        "exp": datetime.now(tz=timezone.utc) + timedelta(minutes=15),
                         "iss": "Bunsho",
                         "uname": fetched_credentials[0],
                         "authorized_locations": fetched_credentials[2],
                         "permissions": fetched_credentials[3],
                     },
-                    cfg.SECRET,
+                    request.app.config.ACCESS_TOKEN_SECRET,
                     algorithm="HS256",
                 ),
             }
         )
+        response.cookies["rt"] = refresh_token
+        response.cookies["rt"]["expires"] = refresh_token_expiry
+        response.cookies["rt"]["path"] = "/api/auth/refresh-token"
+        response.cookies["rt"]["httponly"] = True
+        response.cookies["rt"]["samesite"] = "Strict"
+        return response
 
     raise Unauthorized("Given credentials were invalid.", 401)
 

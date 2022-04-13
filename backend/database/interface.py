@@ -1,5 +1,7 @@
 import asyncio
 import os
+from datetime import datetime, timezone
+from sqlite3 import Row
 from typing import Union
 
 import aiofiles
@@ -40,7 +42,8 @@ class SQLiteInterface:
             await self._db.execute(
                 """
                 INSERT INTO auth (uname, passwd, authorized_locations, permissions)
-                VALUES (?, ?, ?, ?);""",
+                VALUES (?, ?, ?, ?);
+                """,
                 (
                     uname,
                     passwd,
@@ -115,6 +118,39 @@ class SQLiteInterface:
                 users.append(user)
 
         return users
+
+    async def insert_refresh_token(self, token: str, expiry: int, uname: str) -> None:
+        async with self._lock:
+            await self._db.execute(
+                """
+                INSERT INTO refresh_tokens (token, expiry, uname)
+                VALUES (?, ?, ?);
+                """,
+                (token, expiry, uname),
+            )
+            await self._db.commit()
+
+    async def find_refresh_token(self, by: str, value: str) -> Union[Row, None]:
+        async with self._db.execute(
+            f"SELECT * FROM refresh_tokens WHERE {by}=(?);", (value,)
+        ) as cursor:
+            return await cursor.fetchone()
+
+    async def delete_refresh_token(self, uname: str) -> None:
+        async with self._lock:
+            await self._db.execute(
+                "DELETE FROM refresh_tokens WHERE uname=(?);", (uname,)
+            )
+            await self._db.commit()
+
+    async def refresh_tokens_cleanup_task(self) -> None:
+        while True:
+            async with self._db.execute("SELECT * FROM refresh_tokens;") as cursor:
+                async for row in cursor:
+                    if row[1] < int(datetime.now(tz=timezone.utc).timestamp()):
+                        await self.delete_refresh_token(row[2])
+
+            await asyncio.sleep(60)
 
     async def stop(self) -> None:
         await self._db.close()
