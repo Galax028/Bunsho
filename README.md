@@ -1,4 +1,5 @@
 <div align="center">
+    <h1><strong><u>⚠️ALERT⚠️:</u>This project is still under very heavy development, and is not completed yet.</strong></h1>
     <img src="./frontend/src/assets/bunsho-logo.svg#gh-light-mode-only" alt="Bunsho Logo" />
     <img src="./frontend/src/assets/bunsho-logo-no-bg.svg#gh-dark-mode-only" alt="Bunsho Logo" />
     <h1>Bunsho</h1>
