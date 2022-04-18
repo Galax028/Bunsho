@@ -109,9 +109,9 @@ async def api_download_folder(
           name: ext
           schema:
               type: string
-              enum: [zip, tar]
+              enum: [zip, tar.gz]
           required: true
-          description: The file compression type. Accepts "zip" or "tar".
+          description: The file compression type. Accepts "zip" or "tar.gz".
     responses:
         "200":
             description: The requested folder.
@@ -128,14 +128,14 @@ async def api_download_folder(
         raise NotFound("File or folder was not found.", 404)
     if not await aiopath.isdir(path):
         raise InvalidUsage("Files cannot be downloaded by this endpoint.", 400)
-    if ext not in ("zip", "tar"):
+    if ext not in ("zip", "tar.gz"):
         raise InvalidUsage("Invalid archive type was requested.", 400)
     if not await aiopath.exists(f"{archive_path}.{ext}"):
         await asyncio.get_running_loop().run_in_executor(
             None,
             shutil.make_archive,
             archive_path,
-            ext,
+            ext if ext != "tar.gz" else "gztar",
             path,
         )
 
