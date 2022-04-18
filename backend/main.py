@@ -10,7 +10,7 @@ from sanic.log import logger
 from database import SQLiteInterface, TempDBInterface
 from exceptions import ExceptionHandlers
 from utils import BunshoConfig
-from views import load_views
+from routes import load_views
 
 
 class BunshoApp(Sanic):
