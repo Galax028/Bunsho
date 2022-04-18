@@ -42,12 +42,12 @@ async def _decode_token(
             key=request.app.config.ACCESS_TOKEN_SECRET,
             algorithms=["HS256"],
         )
-        blacklist: bool = await request.app.ctx.tempdb.verify_jwt_blacklist(
+        is_blacklisted: bool = await request.app.ctx.tempdb.verify_jwt_blacklist(
             decoded["uname"], decoded["iat"]
         )
         if decoded["iss"] != "Bunsho":
             raise Unauthorized("Invalid token issuer.", 401)
-        if blacklist:
+        if is_blacklisted:
             raise Unauthorized("This token has been invalidated.", 401)
         if return_value:
             return decoded

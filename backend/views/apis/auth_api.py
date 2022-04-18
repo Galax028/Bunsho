@@ -13,7 +13,9 @@ blueprint = Blueprint("api_auth", url_prefix="/auth")
 
 
 @blueprint.post("/access-token")
-async def api_auth_access_token(request: Request, db: SQLiteInterface) -> HTTPResponse:
+async def api_auth_access_token(
+    request: Request, db: SQLiteInterface, tempdb: TempDBInterface
+) -> HTTPResponse:
     """
     Access Token Endpoint
 
@@ -51,7 +53,22 @@ async def api_auth_access_token(request: Request, db: SQLiteInterface) -> HTTPRe
         raise Unauthorized(
             "Could not find the provided refresh token in the database.", 401
         )
-    if fetched_rt[1] < int(datetime.now(tz=timezone.utc).timestamp()):
+    try:
+        decoded: JWTDict = jwt.decode(
+            jwt=rt_cookie,
+            key=request.app.config.REFRESH_TOKEN_SECRET,
+            algorithms=["HS256"],
+        )
+        is_blacklisted: bool = await tempdb.verify_jwt_blacklist(
+            decoded["uname"], decoded["iat"]
+        )
+        if decoded["iss"] != "Bunsho":
+            raise Unauthorized("Invalid token issuer.", 401)
+        if is_blacklisted:
+            raise Unauthorized("This token has been invalidated.", 401)
+    except jwt.exceptions.DecodeError:
+        raise Unauthorized("An error occurred while trying to decode the token.", 401)
+    except jwt.exceptions.ExpiredSignatureError:
         raise Unauthorized("This token has expired.", 401)
 
     try:
@@ -198,7 +215,8 @@ async def api_auth_logout_all(
     """
     Force Logout Endpoint
 
-    This endpoint forces all the user's devices to logout by blacklisting tokens.
+    This endpoint forces all the user's devices to logout by blacklisting both
+    access tokens and refresh tokens that are created before the logout time.
 
     openapi:
     ---
